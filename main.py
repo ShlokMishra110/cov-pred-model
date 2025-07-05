@@ -31,4 +31,6 @@ def predict(input: ModelInput):
         prediction = model.predict(input_data)
         return {"prediction": int(prediction[0])}
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # ✅ Show error in Render logs
         return {"error": str(e)}
