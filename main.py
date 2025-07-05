@@ -3,30 +3,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 
-# Initialize app
+# Load model
+model = joblib.load("MiniProjectML.pkl")
+
 app = FastAPI()
 
-# Enable CORS (Cross-Origin Resource Sharing)
+# ✅ CORS setup — allow frontend origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, replace '*' with your frontend domain
+    allow_origins=["https://shlokmishra110.github.io"],  # restrict to frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load your ML model
-model = joblib.load("MiniProjectML.pkl")
-
-# Define the expected input data schema
+# Input schema
 class ModelInput(BaseModel):
     feature1: float
     feature2: float
-    feature3: float  # Add/remove based on your actual model input features
+    feature3: float
 
-# Prediction endpoint
+# Predict endpoint
 @app.post("/predict")
-def predict(data: ModelInput):
-    input_data = [[data.feature1, data.feature2, data.feature3]]
-    prediction = model.predict(input_data)
-    return {"prediction": int(prediction[0])}
+def predict(input: ModelInput):
+    try:
+        input_data = [[input.feature1, input.feature2, input.feature3]]
+        prediction = model.predict(input_data)
+        return {"prediction": int(prediction[0])}
+    except Exception as e:
+        return {"error": str(e)}
