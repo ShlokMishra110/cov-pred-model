@@ -1,36 +1,47 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
+import numpy as np
 
-# Load model
+# Load model and scaler
 model = joblib.load("MiniProjectML.pkl")
+scaler = joblib.load("scaler.pkl")
 
 app = FastAPI()
 
-# ✅ CORS setup — allow frontend origin
+# Allow frontend CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://shlokmishra110.github.io"],  # restrict to frontend domain
+    allow_origins=["*"],  # Replace with your frontend domain for security
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Input schema
+# Define expected input format (must match frontend form names)
 class ModelInput(BaseModel):
-    feature1: float
-    feature2: float
-    feature3: float
+    age: float
+    ddimer: float
+    crp: float
+    ferritin: float
+    oxygen: float
 
-# Predict endpoint
 @app.post("/predict")
 def predict(input: ModelInput):
     try:
-        input_data = [[input.feature1, input.feature2, input.feature3]]
-        prediction = model.predict(input_data)
+        # Convert input into a 2D list for model
+        input_data = [[
+            input.age,
+            input.ddimer,
+            input.crp,
+            input.ferritin,
+            input.oxygen
+        ]]
+        
+        # Apply scaling before prediction
+        input_scaled = scaler.transform(input_data)
+        prediction = model.predict(input_scaled)
         return {"prediction": int(prediction[0])}
     except Exception as e:
-        import traceback
-        traceback.print_exc()  # ✅ Show error in Render logs
         return {"error": str(e)}
